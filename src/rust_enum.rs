@@ -48,6 +48,7 @@ pub struct RustEnum {
     templates: Vec<String>,
     lifetimes: Vec<String>,
     extra: String,
+    cfg: String,
 }
 
 /// Represents an enum variant in Rust. It supports Struct, Value and Empty variants.
@@ -122,6 +123,7 @@ impl RustEnum {
             templates: Vec::new(),
             lifetimes: Vec::new(),
             extra: String::new(),
+            cfg: String::new(),
         };
     }
 
@@ -176,6 +178,22 @@ impl RustEnum {
         return self;
     }
 
+    /// Adds some extra text after the enum's name but before the opening brace
+    ///
+    /// ```
+    /// use rmod_gen::RustEnum;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// let rust_enum = RustEnum::new("n").with_cfg("#[derive(Clone)]").to_rust_string(0);
+    ///
+    /// assert_eq!(rust_enum, "#[derive(Clone)]\nenum n {\n}\n");
+    /// ```
+    pub fn with_cfg(mut self, cfg: &str) -> Self {
+        self.set_cfg(cfg);
+
+        return self;
+    }
+
     /// Appends a new enum variant.
     pub fn push_variant(&mut self, variant: EnumVariant) {
         self.variants.push(variant);
@@ -218,6 +236,22 @@ impl RustEnum {
     /// ```
     pub fn set_extra(&mut self, extra: &str) {
         self.extra = extra.to_string();
+    }
+
+    /// Adds some extra text after the enum's name but before the opening brace
+    ///
+    /// ```
+    /// use rmod_gen::RustEnum;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// let mut rust_enum = RustEnum::new("n");
+    /// rust_enum.set_cfg("#[derive(Clone)]");
+    /// let rust_enum = rust_enum.to_rust_string(0);
+    ///
+    /// assert_eq!(rust_enum, "#[derive(Clone)]\nenum n {\n}\n");
+    /// ```
+    pub fn set_cfg(&mut self, cfg: &str) {
+        self.cfg = cfg.to_string();
     }
 }
 
@@ -331,7 +365,13 @@ impl RustTemplateUsage for RustEnum {}
 
 impl RustComponentTrait for RustEnum {
     fn to_rust_string(&self, indent_level: usize) -> String {
-        let mut lines = Vec::new();
+        let mut lines;
+
+        if self.cfg.is_empty() {
+            lines = Vec::new();
+        } else {
+            lines = vec![self.cfg.clone()];
+        }
 
         let crate_line = match self.visibility {
             Visibility::Private => format!(
