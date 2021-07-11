@@ -1,7 +1,5 @@
 use crate::rust_component::{RustComponent, RustComponentTrait, RustTemplateUsage, Visibility};
 
-// TODO: Add extra and add cfg options.
-
 /// Represents a function or method in Rust.
 ///
 /// # Example
@@ -40,6 +38,8 @@ pub struct RustMethod {
     body: String,
     templates: Vec<String>,
     lifetimes: Vec<String>,
+    extra: String,
+    cfg: String,
 }
 
 impl RustMethod {
@@ -54,6 +54,8 @@ impl RustMethod {
             body: String::new(),
             templates: Vec::new(),
             lifetimes: Vec::new(),
+            extra: String::new(),
+            cfg: String::new(),
         };
     }
 
@@ -69,6 +71,38 @@ impl RustMethod {
     /// ```
     pub fn with_fn_type(mut self, tp: &str) -> Self {
         self.set_fn_type(tp);
+
+        return self;
+    }
+
+    /// Sets extra information which is inserted before the curly opening brace.
+    ///
+    /// ```
+    /// use rmod_gen::RustMethod;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// let method = RustMethod::new("my_method").with_extra("where T: Debug").to_rust_string(0);
+    ///
+    /// assert_eq!(method, "fn my_method() where T: Debug {\n}\n");
+    /// ```
+    pub fn with_extra(mut self, extra: &str) -> Self {
+        self.set_extra(extra);
+
+        return self;
+    }
+
+    /// Sets some information that should go before the method.
+    ///
+    /// ```
+    /// use rmod_gen::RustMethod;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// let method = RustMethod::new("my_method").with_cfg("#[test]").to_rust_string(0);
+    ///
+    /// assert_eq!(method, "#[test]\nfn my_method() {\n}\n");
+    /// ```
+    pub fn with_cfg(mut self, cfg: &str) -> Self {
+        self.set_cfg(cfg);
 
         return self;
     }
@@ -177,6 +211,38 @@ impl RustMethod {
     pub fn push_lifetime(&mut self, lifetime: &str) {
         self.lifetimes.push(lifetime.to_string());
     }
+
+    /// Sets extra information which is inserted before the curly opening brace.
+    ///
+    /// ```
+    /// use rmod_gen::RustMethod;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// let mut method = RustMethod::new("my_method");
+    /// method.set_extra("where T: Debug");
+    /// let method = method.to_rust_string(0);
+    ///
+    /// assert_eq!(method, "fn my_method() where T: Debug {\n}\n");
+    /// ```
+    pub fn set_extra(&mut self, extra: &str) {
+        self.extra = extra.to_string();
+    }
+
+    /// Sets some information that should go before the method.
+    ///
+    /// ```
+    /// use rmod_gen::RustMethod;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// let mut method = RustMethod::new("my_method");
+    /// method.set_cfg("#[test]");
+    /// let method = method.to_rust_string(0);
+    ///
+    /// assert_eq!(method, "#[test]\nfn my_method() {\n}\n");
+    /// ```
+    pub fn set_cfg(&mut self, cfg: &str) {
+        self.cfg = cfg.to_string();
+    }
 }
 
 impl Into<RustComponent> for RustMethod {
@@ -193,6 +259,12 @@ impl RustComponentTrait for RustMethod {
         let next_level_indent_string = crate::indent_string(indent_level + 1);
 
         let mut components = vec![base_indent_string.clone()];
+
+        if !self.cfg.is_empty() {
+            components.push(self.cfg.clone());
+            components.push("\n".to_string());
+            components.push(base_indent_string.clone());
+        }
 
         if self.visibility != Visibility::Private {
             components.push(self.visibility.to_string());
@@ -221,6 +293,11 @@ impl RustComponentTrait for RustMethod {
         if !self.return_type.is_empty() {
             components.push("-> ".to_string());
             components.push(self.return_type.clone());
+            components.push(" ".to_string());
+        }
+
+        if !self.extra.is_empty() {
+            components.push(self.extra.clone());
             components.push(" ".to_string());
         }
 

@@ -40,6 +40,7 @@ pub struct RustStruct {
     templates: Vec<String>,
     lifetimes: Vec<String>,
     extra: String,
+    cfg: String,
 }
 
 impl RustStruct {
@@ -52,6 +53,7 @@ impl RustStruct {
             templates: Vec::new(),
             lifetimes: Vec::new(),
             extra: String::new(),
+            cfg: String::new(),
         };
     }
 
@@ -125,6 +127,22 @@ impl RustStruct {
         return self;
     }
 
+    /// Adds some extra information right before the struct definition
+    ///
+    /// ```
+    /// use rmod_gen::RustStruct;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// let rust_struct = RustStruct::new("struct_name").with_cfg("#[derive(Clone)]");
+    ///
+    /// assert_eq!(rust_struct.to_rust_string(0), "#[derive(Clone)]\nstruct struct_name {\n}\n");
+    /// ```
+    pub fn with_cfg(mut self, cfg: &str) -> Self {
+        self.set_cfg(cfg);
+
+        return self;
+    }
+
     /// Appends a field.
     ///
     /// ```
@@ -188,6 +206,21 @@ impl RustStruct {
     pub fn set_extra(&mut self, extra: &str) {
         self.extra = extra.to_string();
     }
+
+    /// Adds some extra information right before the struct definition
+    ///
+    /// ```
+    /// use rmod_gen::RustStruct;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// let mut rust_struct = RustStruct::new("struct_name");
+    /// rust_struct.set_cfg("#[derive(Clone)]");
+    ///
+    /// assert_eq!(rust_struct.to_rust_string(0), "#[derive(Clone)]\nstruct struct_name {\n}\n");
+    /// ```
+    pub fn set_cfg(&mut self, cfg: &str) {
+        self.cfg = cfg.to_string();
+    }
 }
 
 impl Into<RustComponent> for RustStruct {
@@ -200,7 +233,13 @@ impl RustTemplateUsage for RustStruct {}
 
 impl RustComponentTrait for RustStruct {
     fn to_rust_string(&self, indent_level: usize) -> String {
-        let mut lines = Vec::new();
+        let mut lines;
+
+        if self.cfg.is_empty() {
+            lines = Vec::new();
+        } else {
+            lines = vec![self.cfg.clone()];
+        }
 
         let crate_line = match self.visibility {
             Visibility::Private => format!(
@@ -305,6 +344,23 @@ mod tests {
         assert_eq!(
             s.to_rust_string(0),
             "struct Time<'a, 'b, T> {\n    seconds: u64,\n    minutes: u64,\n    hours: u64,\n}\n"
+        );
+    }
+
+    #[test]
+    fn mixed_test_indented() {
+        let s = RustStruct::new("Time")
+            .with_cfg("#[derive(Clone)]")
+            .with_lifetime("a")
+            .with_lifetime("b")
+            .with_template("T")
+            .with_field(Field::private("seconds", "u64"))
+            .with_field(Field::private("minutes", "u64"))
+            .with_field(Field::private("hours", "u64"));
+
+        assert_eq!(
+            s.to_rust_string(1),
+            "    #[derive(Clone)]\n    struct Time<'a, 'b, T> {\n        seconds: u64,\n        minutes: u64,\n        hours: u64,\n    }\n"
         );
     }
 }
