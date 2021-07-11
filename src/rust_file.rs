@@ -57,7 +57,7 @@ impl RustFile {
 
     /// Adds a single import to the file.
     pub fn with_import(mut self, import: &str) -> Self {
-        self.push_import(import.to_string());
+        self.push_import(import);
 
         return self;
     }
@@ -100,8 +100,8 @@ impl RustFile {
     }
 
     /// Appends an import to the imports list.
-    pub fn push_import(&mut self, import: String) {
-        self.imports.push(import);
+    pub fn push_import(&mut self, import: &str) {
+        self.imports.push(import.to_string());
     }
 
     /// Converts the file into a string containing the contents for this file as Rust code.
