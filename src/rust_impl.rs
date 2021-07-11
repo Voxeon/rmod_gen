@@ -1,5 +1,33 @@
 use crate::rust_component::{RustComponent, RustComponentTrait, RustTemplateUsage};
 
+/// Specifies a Rust impl block.
+///
+/// # Example
+/// ```
+/// use rmod_gen::{RustImplementation, RustMethod};
+/// use rmod_gen::rust_component::RustComponentTrait;
+///
+/// // To generate the following impl:
+/// /*
+/// impl Container for Carton<B> {
+///     fn pour() {
+///     }
+///
+///     fn fill() {
+///     }
+///
+/// }
+/// */
+/// let s = RustImplementation::new_for("Container", "Carton")
+///             .with_target_template("B")
+///             .with_component(RustMethod::new("pour").into())
+///             .with_component(RustMethod::new("fill").into())
+///             .to_rust_string(0);
+///
+/// let cmp = "impl Container for Carton<B> {\n    fn pour() {\n    }\n\n    fn fill() {\n    }\n\n}\n".to_string();
+///
+/// assert_eq!(s, cmp);
+/// ```
 #[derive(Clone, Debug, Hash, PartialEq)]
 pub struct RustImplementation {
     name: String,
@@ -48,12 +76,28 @@ impl RustImplementation {
         return self;
     }
 
+    /// Adds a lifetime to the impl component. The lifetime should be only the identifier. i.e. to create a lifetime " 'a "
+    ///
+    /// ```
+    /// use rmod_gen::RustImplementation;
+    ///
+    /// // impl<'a>
+    /// let mut rust_impl = RustImplementation::new("struct_name").with_impl_lifetime("a"); // Creates new lifetime 'a
+    /// ```
     pub fn with_impl_lifetime(mut self, lifetime: &str) -> Self {
         self.push_impl_lifetime(lifetime);
 
         return self;
     }
 
+    /// Adds a lifetime to the target component. The lifetime should be only the identifier. i.e. to create a lifetime " 'a "
+    ///
+    /// ```
+    /// use rmod_gen::RustImplementation;
+    ///
+    /// // impl struct_name<'a>
+    /// let mut rust_impl = RustImplementation::new("struct_name").with_target_lifetime("a"); // Creates new lifetime 'a
+    /// ```
     pub fn with_target_lifetime(mut self, lifetime: &str) -> Self {
         self.push_target_lifetime(lifetime);
 
@@ -93,10 +137,28 @@ impl RustImplementation {
         self.push_target_lifetime(lifetime);
     }
 
+    /// Adds a lifetime to the impl component. The lifetime should be only the identifier. i.e. to create a lifetime " 'a "
+    ///
+    /// ```
+    /// use rmod_gen::RustImplementation;
+    ///
+    /// // impl<'a>
+    /// let mut rust_impl = RustImplementation::new("struct_name");
+    /// rust_impl.push_impl_lifetime("a"); // Creates new lifetime 'a
+    /// ```
     pub fn push_impl_lifetime(&mut self, template: &str) {
         self.impl_lifetimes.push(template.to_string());
     }
 
+    /// Adds a lifetime to the target component. The lifetime should be only the identifier. i.e. to create a lifetime " 'a "
+    ///
+    /// ```
+    /// use rmod_gen::RustImplementation;
+    ///
+    /// // impl struct_name<'a>
+    /// let mut rust_impl = RustImplementation::new("struct_name");
+    /// rust_impl.push_target_lifetime("a"); // Creates new lifetime 'a
+    /// ```
     pub fn push_target_lifetime(&mut self, template: &str) {
         self.target_lifetimes.push(template.to_string());
     }
@@ -151,7 +213,6 @@ impl RustComponentTrait for RustImplementation {
 
         for component in &self.components {
             lines.push(component.to_rust_string(indent_level + 1));
-            lines.push(String::new());
         }
 
         lines.push(format!("{}}}\n", base_indent_level));

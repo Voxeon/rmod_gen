@@ -4,6 +4,34 @@ use crate::rust_component::{
 
 use std::fmt;
 
+/// Defines a struct in Rust.
+///
+/// # Example
+/// ```
+/// use rmod_gen::RustStruct;
+/// use rmod_gen::rust_component::{Field, RustComponentTrait};
+///
+/// // Creates the following struct
+/// /*
+/// struct Time<'a, 'b, T> {
+///     seconds: u64,
+///     minutes: u64,
+///     hours: u64,
+/// }
+/// */
+///
+/// let s = RustStruct::new("Time")
+///             .with_lifetime("a")
+///             .with_lifetime("b")
+///             .with_template("T")
+///             .with_field(Field::private("seconds", "u64"))
+///             .with_field(Field::private("minutes", "u64"))
+///             .with_field(Field::private("hours", "u64"));
+/// assert_eq!(
+///     s.to_rust_string(0),
+///     "struct Time<'a, 'b, T> {\n    seconds: u64,\n    minutes: u64,\n    hours: u64,\n}\n"
+/// );
+/// ```
 #[derive(Clone, Debug, Hash, PartialEq)]
 pub struct RustStruct {
     name: String,
@@ -15,6 +43,7 @@ pub struct RustStruct {
 }
 
 impl RustStruct {
+    /// Creates a new instance.
     pub fn new(name: &str) -> Self {
         return Self {
             name: name.to_string(),
@@ -26,18 +55,38 @@ impl RustStruct {
         };
     }
 
+    /// Appends a field.
+    ///
+    /// ```
+    /// use rmod_gen::RustStruct;
+    /// use rmod_gen::rust_component::{Field, RustComponentTrait};
+    /// let rust_struct = RustStruct::new("my_struct").with_field(Field::private("a", "u64"));
+    ///
+    /// assert_eq!(rust_struct.to_rust_string(0), "struct my_struct {\n    a: u64,\n}\n");
+    /// ```
     pub fn with_field(mut self, field: Field) -> Self {
         self.push_field(field);
 
         return self;
     }
 
+    /// Set the visibility of the struct.
     pub fn with_visibility(mut self, visibility: Visibility) -> Self {
         self.visibility = visibility;
 
         return self;
     }
 
+    /// Append a template to the list of templates.
+    ///
+    /// ```
+    /// use rmod_gen::RustStruct;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// let rust_struct = RustStruct::new("struct_name").with_template("T");
+    ///
+    /// assert_eq!(rust_struct.to_rust_string(0), "struct struct_name<T> {\n}\n");
+    /// ```
     pub fn with_template(mut self, template_identifier: &str) -> Self {
         self.push_template(template_identifier);
 
@@ -48,8 +97,11 @@ impl RustStruct {
     ///
     /// ```
     /// use rmod_gen::RustStruct;
+    /// use rmod_gen::rust_component::RustComponentTrait;
     ///
-    /// let mut rust_struct = RustStruct::new("struct_name").with_lifetime("a"); // Creates new lifetime 'a
+    /// let mut rust_struct = RustStruct::new("struct_name").with_lifetime("a");
+    ///
+    /// assert_eq!(rust_struct.to_rust_string(0), "struct struct_name<'a> {\n}\n");
     /// ```
     pub fn with_lifetime(mut self, lifetime_identifier: &str) -> Self {
         self.push_lifetime(lifetime_identifier);
@@ -57,20 +109,52 @@ impl RustStruct {
         return self;
     }
 
+    /// Adds some extra information right before the opening curly brace.
+    ///
+    /// ```
+    /// use rmod_gen::RustStruct;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// let rust_struct = RustStruct::new("struct_name").with_extra("where T: Debug");
+    ///
+    /// assert_eq!(rust_struct.to_rust_string(0), "struct struct_name where T: Debug {\n}\n");
+    /// ```
     pub fn with_extra(mut self, extra: &str) -> Self {
         self.set_extra(extra);
 
         return self;
     }
 
+    /// Appends a field.
+    ///
+    /// ```
+    /// use rmod_gen::RustStruct;
+    /// use rmod_gen::rust_component::{Field, RustComponentTrait};
+    /// let mut rust_struct = RustStruct::new("my_struct");
+    /// rust_struct.push_field(Field::private("a", "u64"));
+    ///
+    /// assert_eq!(rust_struct.to_rust_string(0), "struct my_struct {\n    a: u64,\n}\n");
+    /// ```
     pub fn push_field(&mut self, field: Field) {
         self.fields.push(field);
     }
 
+    /// Set the visibility of the struct.
     pub fn set_visibility(&mut self, visibility: Visibility) {
         self.visibility = visibility;
     }
 
+    /// Append a template to the list of templates.
+    ///
+    /// ```
+    /// use rmod_gen::RustStruct;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// let mut rust_struct = RustStruct::new("struct_name");
+    /// rust_struct.push_template("T");
+    ///
+    /// assert_eq!(rust_struct.to_rust_string(0), "struct struct_name<T> {\n}\n");
+    /// ```
     pub fn push_template(&mut self, template_identifier: &str) {
         self.templates.push(template_identifier.to_string());
     }
@@ -79,14 +163,28 @@ impl RustStruct {
     ///
     /// ```
     /// use rmod_gen::RustStruct;
+    /// use rmod_gen::rust_component::RustComponentTrait;
     ///
     /// let mut rust_struct = RustStruct::new("struct_name");
-    /// rust_struct.push_lifetime("a"); // Creates new lifetime 'a
+    /// rust_struct.push_lifetime("a");
+    ///
+    /// assert_eq!(rust_struct.to_rust_string(0), "struct struct_name<'a> {\n}\n");
     /// ```
     pub fn push_lifetime(&mut self, lifetime_identifier: &str) {
         self.lifetimes.push(lifetime_identifier.to_string());
     }
 
+    /// Adds some extra information right before the opening curly brace.
+    ///
+    /// ```
+    /// use rmod_gen::RustStruct;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// let mut rust_struct = RustStruct::new("struct_name");
+    /// rust_struct.set_extra("where T: Debug");
+    ///
+    /// assert_eq!(rust_struct.to_rust_string(0), "struct struct_name where T: Debug {\n}\n");
+    /// ```
     pub fn set_extra(&mut self, extra: &str) {
         self.extra = extra.to_string();
     }

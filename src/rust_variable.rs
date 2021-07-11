@@ -1,5 +1,19 @@
 use crate::rust_component::{RustComponent, RustComponentTrait, Visibility};
 
+/// Represents a variable in Rust.
+///
+/// # Example
+/// ```
+/// use rmod_gen::RustVariable;
+/// use rmod_gen::rust_component::RustComponentTrait;
+///
+/// // Create the following variable:
+/// // let var: &str = "carton";
+///
+///
+/// let variable = RustVariable::new_let("var").with_value("\"carton\"").with_type("&str").to_rust_string(0);
+/// assert_eq!(variable, "let var: &str = \"carton\";");
+/// ```
 #[derive(Clone, Debug, Hash, PartialEq)]
 pub struct RustVariable {
     visibility: Visibility,
@@ -18,6 +32,7 @@ enum VariableType {
 }
 
 impl RustVariable {
+    /// Create a new let variable.
     pub fn new_let(name: &str) -> Self {
         return Self {
             visibility: Visibility::Private,
@@ -29,6 +44,7 @@ impl RustVariable {
         };
     }
 
+    /// Create a new constant variable.
     pub fn new_const(name: &str) -> Self {
         return Self {
             visibility: Visibility::Private,
@@ -40,6 +56,7 @@ impl RustVariable {
         };
     }
 
+    /// Create a new static variable.
     pub fn new_static(name: &str) -> Self {
         return Self {
             visibility: Visibility::Private,
@@ -51,42 +68,126 @@ impl RustVariable {
         };
     }
 
+    /// Sets the value for the variable.
+    ///
+    /// ```
+    /// use rmod_gen::RustVariable;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// let v = RustVariable::new_let("people").with_value("5");
+    ///
+    /// assert_eq!(v.to_rust_string(0), "let people = 5;")
+    /// ```
     pub fn with_value(mut self, value: &str) -> Self {
         self.set_value(value);
 
         return self;
     }
 
+    /// Sets an explicit type for the variable.
+    ///
+    /// ```
+    /// use rmod_gen::RustVariable;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// let v = RustVariable::new_let("people").with_type("u64");
+    ///
+    /// assert_eq!(v.to_rust_string(0), "let people: u64;")
+    /// ```
     pub fn with_type(mut self, tp: &str) -> Self {
         self.set_type(tp);
 
         return self;
     }
 
-    pub fn with_mut(mut self, mutable: bool) -> Self {
-        self.set_mut(mutable);
+    /// Marks the variable as mutable
+    ///
+    /// ```
+    /// use rmod_gen::RustVariable;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// let v = RustVariable::new_let("people").with_mut();
+    ///
+    /// assert_eq!(v.to_rust_string(0), "let mut people;")
+    /// ```
+    pub fn with_mut(mut self) -> Self {
+        self.set_mut(true);
 
         return self;
     }
 
+    /// Set the variable's visibility
+    ///
+    /// ```
+    /// use rmod_gen::RustVariable;
+    /// use rmod_gen::rust_component::{RustComponentTrait, Visibility};
+    ///
+    /// let v = RustVariable::new_const("people").with_visibility(Visibility::Public);
+    ///
+    /// assert_eq!(v.to_rust_string(0), "pub const people;")
+    /// ```
     pub fn with_visibility(mut self, visibility: Visibility) -> Self {
         self.set_visibility(visibility);
 
         return self;
     }
 
+    /// Sets the value for the variable.
+    ///
+    /// ```
+    /// use rmod_gen::RustVariable;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// let mut v = RustVariable::new_let("people");
+    /// v.set_value("5");
+    ///
+    /// assert_eq!(v.to_rust_string(0), "let people = 5;")
+    /// ```
     pub fn set_value(&mut self, value: &str) {
         self.value = value.to_string();
     }
 
+    /// Sets an explicit type for the variable.
+    ///
+    /// ```
+    /// use rmod_gen::RustVariable;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// let mut v = RustVariable::new_let("people");
+    /// v.set_type("u64");
+    ///
+    /// assert_eq!(v.to_rust_string(0), "let people: u64;")
+    /// ```
     pub fn set_type(&mut self, tp: &str) {
         self.tp = tp.to_string();
     }
 
+    /// Marks the variable as mutable or immutable
+    ///
+    /// ```
+    /// use rmod_gen::RustVariable;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// let mut v = RustVariable::new_let("people");
+    /// v.set_mut(true);
+    ///
+    /// assert_eq!(v.to_rust_string(0), "let mut people;")
+    /// ```
     pub fn set_mut(&mut self, mutable: bool) {
         self.is_mut = mutable;
     }
 
+    /// Set the variable's visibility
+    ///
+    /// ```
+    /// use rmod_gen::RustVariable;
+    /// use rmod_gen::rust_component::{RustComponentTrait, Visibility};
+    ///
+    /// let mut v = RustVariable::new_const("people");
+    /// v.set_visibility(Visibility::Public);
+    ///
+    /// assert_eq!(v.to_rust_string(0), "pub const people;")
+    /// ```
     pub fn set_visibility(&mut self, visibility: Visibility) {
         self.visibility = visibility;
     }

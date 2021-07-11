@@ -1,6 +1,6 @@
-mod file;
 pub mod rust_component;
 mod rust_enum;
+mod rust_file;
 mod rust_impl;
 mod rust_method;
 mod rust_module;
@@ -8,8 +8,8 @@ mod rust_struct;
 mod rust_text;
 mod rust_variable;
 
-pub use file::RustFile;
 pub use rust_enum::{EnumVariant, EnumVariantBuilder, RustEnum};
+pub use rust_file::RustFile;
 pub use rust_impl::RustImplementation;
 pub use rust_method::RustMethod;
 pub use rust_module::RustModule;

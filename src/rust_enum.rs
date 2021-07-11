@@ -2,6 +2,44 @@ use crate::rust_component::{
     Field, RustComponent, RustComponentTrait, RustTemplateUsage, Visibility,
 };
 
+/// Represents an enum in rust.
+///
+/// # Example
+/// ```
+/// use rmod_gen::{RustEnum, EnumVariant};
+/// use rmod_gen::rust_component::{Visibility, RustComponentTrait};
+///
+/// // Creates a new rust enum titled Animals, with a template parameter and a variant with a field.
+///
+/// // The generated code would appear like this when formatted correctly:
+/// /*
+/// pub(crate) enum Animals<T> {
+///     Cow {
+///         age: u64,
+///     },
+///     Dog {
+///         age: u64,
+///         weight: u64,
+///     },
+/// }
+/// */
+///
+/// let e = RustEnum::new("Animals")
+///     .with_visibility(Visibility::CrateVisible)
+///     .with_template("T")
+///     .with_variant(EnumVariant::build("Cow").with_field("age", "u64").build())
+///     .with_variant(
+///         EnumVariant::build("Dog")
+///             .with_field("age", "u64")
+///             .with_field("weight", "u64")
+///             .build(),
+///     );
+///
+///  assert_eq!(
+///     e.to_rust_string(0),
+///     "pub(crate) enum Animals<T> {\n    Cow {\n        age: u64,\n    },\n    Dog {\n        age: u64,\n        weight: u64,\n    },\n}\n".to_string()
+///  );
+/// ```
 #[derive(Clone, Debug, Hash, PartialEq)]
 pub struct RustEnum {
     name: String,
@@ -12,17 +50,21 @@ pub struct RustEnum {
     extra: String,
 }
 
+/// Represents an enum variant in Rust. It supports Struct, Value and Empty variants.
 #[derive(Clone, Debug, Hash, PartialEq)]
 pub enum EnumVariant {
     /// Represents an enum variant that is a struct.
     /// ```
-    /// // To represent the following enum
     /// use rmod_gen::EnumVariant;
+    ///
+    /// // To represent the following enum
+    /// /*
     /// enum MyEnum {
     ///     MyVariant {
     ///         field: String,
     ///     }
     /// }
+    /// */
     ///
     /// let my_variant = EnumVariant::build("MyVariant").with_field("field", "String").build();
     /// ```
@@ -31,15 +73,38 @@ pub enum EnumVariant {
         /// Represents the fields for this struct variant. Field visibility is ignored when generating enums.
         fields: Vec<Field>,
     },
-    ValueVariant {
-        name: String,
-        types: Vec<String>,
-    },
-    EmptyVariant {
-        name: String,
-    },
+    /// Represents an enum variant that is a value.
+    /// ```
+    /// use rmod_gen::EnumVariant;
+    ///
+    /// // To represent the following enum
+    /// /*
+    /// enum MyEnum {
+    ///     MyVariant(String),
+    /// }
+    /// */
+    ///
+    /// let my_variant = EnumVariant::build("MyVariant").with_value("String").build();
+    /// ```
+    ValueVariant { name: String, types: Vec<String> },
+    /// Represents an enum variant that is simply a variant.
+    /// ```
+    /// use rmod_gen::EnumVariant;
+    ///
+    /// // To represent the following enum
+    /// /*
+    /// enum MyEnum {
+    ///     MyVariant,
+    /// }
+    /// */
+    ///
+    /// let my_variant = EnumVariant::build("MyVariant").build();
+    /// ```
+    EmptyVariant { name: String },
 }
 
+/// Used to build enum variants where there are multiple fields or values. It is most useful when
+/// you need to dynamically generate an enum.
 #[derive(Debug)]
 pub struct EnumVariantBuilder {
     name: String,
@@ -48,6 +113,7 @@ pub struct EnumVariantBuilder {
 }
 
 impl RustEnum {
+    /// Creates a new empty instance.
     pub fn new(name: &str) -> Self {
         return Self {
             name: name.to_string(),
@@ -59,18 +125,21 @@ impl RustEnum {
         };
     }
 
+    /// Appends a new variant to the enum.
     pub fn with_variant(mut self, variant: EnumVariant) -> Self {
         self.push_variant(variant);
 
         return self;
     }
 
+    /// Sets the visibility for the enum.
     pub fn with_visibility(mut self, visibility: Visibility) -> Self {
         self.visibility = visibility;
 
         return self;
     }
 
+    /// Appends a template value for the enum.
     pub fn with_template(mut self, template_identifier: &str) -> Self {
         self.push_template(template_identifier);
 
@@ -80,9 +149,10 @@ impl RustEnum {
     /// Adds a lifetime. The lifetime should be only the identifier. i.e. to create a lifetime " 'a "
     ///
     /// ```
-    /// use rmod_gen::RustStruct;
+    /// use rmod_gen::RustEnum;
     ///
-    /// let mut rust_struct = RustStruct::new("struct_name").with_lifetime("a"); // Creates new lifetime 'a
+    /// // enum enum_name<'a>
+    /// let mut rust_enum = RustEnum::new("enum_name").with_lifetime("a"); // Creates new lifetime 'a
     /// ```
     pub fn with_lifetime(mut self, lifetime_identifier: &str) -> Self {
         self.push_lifetime(lifetime_identifier);
@@ -90,20 +160,33 @@ impl RustEnum {
         return self;
     }
 
+    /// Adds some extra text after the enum's name but before the opening brace
+    ///
+    /// ```
+    /// use rmod_gen::RustEnum;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// let rust_enum = RustEnum::new("n").with_extra("where T: Debug").to_rust_string(0);
+    ///
+    /// assert_eq!(rust_enum, "enum n where T: Debug {\n}\n");
+    /// ```
     pub fn with_extra(mut self, extra: &str) -> Self {
         self.set_extra(extra);
 
         return self;
     }
 
+    /// Appends a new enum variant.
     pub fn push_variant(&mut self, variant: EnumVariant) {
         self.variants.push(variant);
     }
 
+    /// Sets the visibility of this enum.
     pub fn set_visibility(&mut self, visibility: Visibility) {
         self.visibility = visibility;
     }
 
+    /// Appends a template parameter.
     pub fn push_template(&mut self, template_identifier: &str) {
         self.templates.push(template_identifier.to_string());
     }
@@ -120,12 +203,26 @@ impl RustEnum {
         self.lifetimes.push(lifetime_identifier.to_string());
     }
 
+    /// Adds some extra text after the enum's name but before the opening brace
+    ///
+    /// ```
+    /// use rmod_gen::RustEnum;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// let mut rust_enum = RustEnum::new("n");
+    /// rust_enum.set_extra("where T: Debug");
+    ///
+    /// let rust_enum = rust_enum.to_rust_string(0);
+    ///
+    /// assert_eq!(rust_enum, "enum n where T: Debug {\n}\n");
+    /// ```
     pub fn set_extra(&mut self, extra: &str) {
         self.extra = extra.to_string();
     }
 }
 
 impl EnumVariant {
+    /// Creates a new struct enum variant.
     pub fn new_struct(name: &str, fields: Vec<Field>) -> Self {
         return Self::StructVariant {
             name: name.to_string(),
@@ -133,6 +230,7 @@ impl EnumVariant {
         };
     }
 
+    /// Creates a new value enum variant.
     pub fn new_value(name: &str, types: Vec<String>) -> Self {
         return Self::ValueVariant {
             name: name.to_string(),
@@ -140,12 +238,14 @@ impl EnumVariant {
         };
     }
 
+    /// Creates a new empty enum variant.
     pub fn new_empty(name: &str) -> Self {
         return Self::EmptyVariant {
             name: name.to_string(),
         };
     }
 
+    /// Creates a new builder with the specified name.
     pub fn build(name: &str) -> EnumVariantBuilder {
         return EnumVariantBuilder::new(name);
     }
@@ -160,6 +260,7 @@ impl EnumVariantBuilder {
         };
     }
 
+    /// Finish building and generate the corresponding enum variant based on the input supplied.
     pub fn build(self) -> EnumVariant {
         let name = self.name.clone();
 
@@ -180,24 +281,28 @@ impl EnumVariantBuilder {
         };
     }
 
+    /// Add a new field.
     pub fn with_field(mut self, name: &str, tp: &str) -> Self {
         self.push_field(name, tp);
 
         return self;
     }
 
+    /// Add a new value.
     pub fn with_value(mut self, tp: &str) -> Self {
         self.push_value(tp);
 
         return self;
     }
 
+    /// Add a new field.
     pub fn push_field(&mut self, name: &str, tp: &str) {
         self.struct_variant = true;
 
         self.fields.push((name.to_string(), tp.to_string()));
     }
 
+    /// Add a new value.
     pub fn push_value(&mut self, tp: &str) {
         self.fields
             .push((self.fields.len().to_string(), tp.to_string()));

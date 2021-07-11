@@ -6,6 +6,8 @@ use crate::rust_text::RustText;
 use std::fmt;
 use std::fmt::Debug;
 
+/// Any rust component should implement this trait, it can then be used as sub-components for
+/// components which support it. It provides a method for converting a component into a string of Rust code.
 pub trait RustComponentTrait: Into<RustComponent> {
     /// Represent this object as rust code indented to the desired level.
     fn to_rust_string(&self, indent_level: usize) -> String;
@@ -43,6 +45,7 @@ pub(crate) trait RustTemplateUsage {
     }
 }
 
+/// Represents a field with a name, type and visibility level.
 #[derive(Clone, Debug, Hash, PartialEq)]
 pub struct Field {
     name: String,
@@ -50,6 +53,7 @@ pub struct Field {
     visibility: Visibility,
 }
 
+/// RustComponent is the base type that is used across the library. Every component must have a RustComponent variant.
 #[derive(Debug, Clone, PartialEq, Hash)]
 pub enum RustComponent {
     Module(RustModule),
@@ -62,35 +66,36 @@ pub enum RustComponent {
     Text(RustText),
 }
 
+/// Represents the 3 levels of visibility in Rust.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Visibility {
     Private,
     Public,
+    /// pub(crate)
     CrateVisible,
 }
 
 impl Field {
-    pub fn private(name: &str, field_type: &str) -> Self {
-        return Self {
-            name: name.to_string(),
-            field_type: field_type.to_string(),
-            visibility: Visibility::Private,
-        };
-    }
-
-    pub(crate) fn private_fast(name: String, field_type: String) -> Self {
-        return Self {
-            name,
-            field_type,
-            visibility: Visibility::Private,
-        };
-    }
-
+    /// Creates a new field with a specified visibility.
     pub fn new(name: &str, field_type: &str, visibility: Visibility) -> Self {
         return Self {
             name: name.to_string(),
             field_type: field_type.to_string(),
             visibility,
+        };
+    }
+
+    /// Creates a new private field.
+    pub fn private(name: &str, field_type: &str) -> Self {
+        return Self::new(name, field_type, Visibility::Private);
+    }
+
+    /// A fast version that doesn't involve any additional allocations.
+    pub(crate) fn private_fast(name: String, field_type: String) -> Self {
+        return Self {
+            name,
+            field_type,
+            visibility: Visibility::Private,
         };
     }
 }
