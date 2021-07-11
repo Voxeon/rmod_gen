@@ -1,0 +1,8 @@
+[package]
+name = "rmod_gen"
+version = "0.1.0"
+edition = "2018"
+
+[features]
+default = []
+indent_tabs = []
