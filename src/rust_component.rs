@@ -1,5 +1,6 @@
 use crate::{
-    EnumVariant, RustEnum, RustImplementation, RustMethod, RustModule, RustStruct, RustVariable,
+    EnumVariant, RustEnum, RustImplementation, RustMethod, RustModule, RustStruct, RustTrait,
+    RustVariable,
 };
 
 use crate::rust_text::RustText;
@@ -64,6 +65,7 @@ pub enum RustComponent {
     Implementation(RustImplementation),
     Variable(RustVariable),
     Text(RustText),
+    Trait(RustTrait),
 }
 
 /// Represents the 3 levels of visibility in Rust.
@@ -121,6 +123,7 @@ impl RustComponent {
             RustComponent::Implementation(o) => o.to_rust_string(indent_level),
             RustComponent::Variable(o) => o.to_rust_string(indent_level),
             RustComponent::Text(o) => o.to_rust_string(indent_level),
+            RustComponent::Trait(o) => o.to_rust_string(indent_level),
         };
     }
 }

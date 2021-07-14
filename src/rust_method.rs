@@ -40,6 +40,7 @@ pub struct RustMethod {
     lifetimes: Vec<String>,
     extra: String,
     cfg: String,
+    without_body: bool,
 }
 
 impl RustMethod {
@@ -56,6 +57,7 @@ impl RustMethod {
             lifetimes: Vec::new(),
             extra: String::new(),
             cfg: String::new(),
+            without_body: false,
         };
     }
 
@@ -157,6 +159,23 @@ impl RustMethod {
         return self;
     }
 
+    /// Replaces the body of the method with a semicolon.
+    ///
+    /// ```
+    /// use rmod_gen::RustMethod;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// // fn method_name();
+    /// let rust_enum = RustMethod::new("method_name").without_body();
+    ///
+    /// assert_eq!(rust_enum.to_rust_string(0), "fn method_name();\n");
+    /// ```
+    pub fn without_body(mut self) -> Self {
+        self.set_with_body(false);
+
+        return self;
+    }
+
     /// Set the function type, for example 'unsafe' or 'const'
     ///
     /// ```
@@ -243,6 +262,22 @@ impl RustMethod {
     pub fn set_cfg(&mut self, cfg: &str) {
         self.cfg = cfg.to_string();
     }
+
+    /// Replaces the body of the method with a semicolon or a block.
+    ///
+    /// ```
+    /// use rmod_gen::RustMethod;
+    /// use rmod_gen::rust_component::RustComponentTrait;
+    ///
+    /// // fn method_name();
+    /// let mut rust_enum = RustMethod::new("method_name");
+    /// rust_enum.set_with_body(false);
+    ///
+    /// assert_eq!(rust_enum.to_rust_string(0), "fn method_name();\n");
+    /// ```
+    pub fn set_with_body(&mut self, body: bool) {
+        self.without_body = !body;
+    }
 }
 
 impl Into<RustComponent> for RustMethod {
@@ -288,29 +323,32 @@ impl RustComponentTrait for RustMethod {
 
         components.push("(".to_string());
         components.push(self.arguments.join(", "));
-        components.push(") ".to_string());
+        components.push(")".to_string());
 
         if !self.return_type.is_empty() {
-            components.push("-> ".to_string());
+            components.push(" -> ".to_string());
             components.push(self.return_type.clone());
-            components.push(" ".to_string());
         }
 
         if !self.extra.is_empty() {
-            components.push(self.extra.clone());
             components.push(" ".to_string());
+            components.push(self.extra.clone());
         }
 
-        components.push("{\n".to_string());
+        if self.without_body {
+            components.push(";\n".to_string());
+        } else {
+            components.push(" {\n".to_string());
 
-        for line in self.body.lines() {
-            components.push(next_level_indent_string.clone());
-            components.push(line.to_string());
-            components.push("\n".to_string());
+            for line in self.body.lines() {
+                components.push(next_level_indent_string.clone());
+                components.push(line.to_string());
+                components.push("\n".to_string());
+            }
+
+            components.push(base_indent_string);
+            components.push("}\n".to_string());
         }
-
-        components.push(base_indent_string);
-        components.push("}\n".to_string());
 
         return components.join("");
     }

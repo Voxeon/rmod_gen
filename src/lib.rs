@@ -6,6 +6,7 @@ mod rust_method;
 mod rust_module;
 mod rust_struct;
 mod rust_text;
+mod rust_trait;
 mod rust_variable;
 
 pub use rust_enum::{EnumVariant, EnumVariantBuilder, RustEnum};
@@ -15,6 +16,7 @@ pub use rust_method::RustMethod;
 pub use rust_module::RustModule;
 pub use rust_struct::RustStruct;
 pub use rust_text::RustText;
+pub use rust_trait::RustTrait;
 pub use rust_variable::RustVariable;
 
 const TAB_SIZE: usize = 4;
